@@ -1,0 +1,43 @@
+(()=>{'use strict';
+const fmt=n=>Math.round(n).toLocaleString('es-CL');const fmtPct=n=>n.toLocaleString('es-CL',{minimumFractionDigits:1,maximumFractionDigits:1})+'%';
+const today=new Date();today.setHours(12,0,0,0);let selected=new Date(today),page=1;const PAGE_SIZE=12;
+const el=id=>document.getElementById(id);
+const seed=[
+['2451','A','0748','Santina','08:05','09:30',4500,4320,84.1,'Finalizado'],
+['2452','A','0521','Lapins','09:35','11:10',3800,3650,82.7,'Finalizado'],
+['2453','A','0612','Regina','11:15','13:20',5200,5010,85.3,'Finalizado'],
+['2454','A','0748','Santina','13:35','15:10',4600,4250,82.1,'Finalizado'],
+['2455','A','0314','Lapins','15:15','16:25',3900,3780,81.9,'Finalizado'],
+['2456','A','0550','Regina','16:30','18:00',4400,4100,85.7,'Finalizado'],
+['2457','B','0748','Santina','19:10','20:40',4800,4520,83.5,'Finalizado'],
+['2458','B','0612','Lapins','20:45','22:15',5100,4780,82.8,'Finalizado'],
+['2459','B','0521','Regina','22:20','23:30',3600,3400,84.3,'Finalizado']
+];
+const makeData=(date)=>{const diff=Math.round((today-date)/86400000);if(diff<0)return [];if(diff===0){ // Demo: turno A y turno B, permite inspeccionar ambos; no se conecta al SGE.
+return seed.map((r,i)=>({id:r[0],shift:r[1],producer:r[2],variety:r[3],start:r[4],end:r[5],planned:r[6],kg:r[9]==='Finalizado'?r[6]:r[7],exp:r[8],status:r[9]}));}
+if(diff%7===0)return [];return seed.slice(0,diff%3===0?6:9).map((r,i)=>({id:String(Number(r[0])-diff*10),shift:r[1],producer:r[2],variety:r[3],start:r[4],end:r[5],planned:r[6],kg:r[6],exp:r[8]-(diff%4)*.3,status:'Finalizado'}));};
+const mins=t=>{const [h,m]=t.split(':').map(Number);return h*60+m};
+const duration=r=>Math.max(1,mins(r.end)-mins(r.start));
+const aggregate=rs=>{const kg=rs.reduce((a,r)=>a+r.kg,0),planned=rs.reduce((a,r)=>a+r.planned,0),exportKg=rs.reduce((a,r)=>a+r.kg*r.exp/100,0),minutes=rs.reduce((a,r)=>a+duration(r),0);return {kg,planned,exp:kg?exportKg/kg*100:null,rate:minutes?kg/(minutes/60):null};};
+const sidebar=document.createElement('div');sidebar.className='pm-h-aside';sidebar.innerHTML=`<div class="pm-h-side-card"><div class="pm-h-side-label"><span class="pm-unified-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M7 3v4M17 3v4M3 10h18"/></svg></span>FECHA DE LA JORNADA</div><div class="pm-h-date-row"><button id="pm-h-date-prev" type="button" aria-label="Día anterior">‹</button><strong id="pm-h-date-text"></strong><button id="pm-h-date-next" type="button" aria-label="Día siguiente">›</button></div><input type="date" id="pm-h-date-input" aria-label="Seleccionar fecha"></div><div class="pm-h-side-card"><div class="pm-h-side-label"><span class="pm-unified-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4m11.4 11.4 1.4 1.4M2 12h2m16 0h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg></span>TURNOS DE LA JORNADA</div><div id="pm-h-shifts" class="pm-h-shifts"></div></div><div class="pm-h-side-card"><div class="pm-h-side-label"><span class="pm-unified-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="3"/><path d="M8 9h8M8 13h8M8 17h5"/></svg></span>RESUMEN RÁPIDO</div><div class="pm-h-total-line"><strong id="pm-h-side-total" class="pm-h-side-total">0</strong><small>procesos realizados</small></div><div class="pm-h-process-track"><div id="pm-h-process-a" class="pm-h-process-a"></div><div id="pm-h-process-b" class="pm-h-process-b"></div></div><div class="pm-h-side-split"><span><b id="pm-h-side-a">0</b><small>Turno A</small></span><span><b id="pm-h-side-b">0</b><small>Turno B</small></span></div></div>`;
+const aside=document.querySelector('.process-strip');aside?.appendChild(sidebar);
+const iso=d=>[d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-');
+function barChart(id,va,vb,unit,max){
+ const items=[['Turno A',va,'#0ba477'],['Turno B',vb,'#2879e5']].filter(x=>x[1]!==null);
+ if(!items.length){el(id).innerHTML='<div class="pm-h-empty">Sin producción registrada</div>';return;}
+ const ceiling=max||Math.max(1,...items.map(x=>x[1]))*1.15;
+ const ticks=[0,.25,.5,.75,1];
+ el(id).innerHTML=`<div class="pm-h-chart-plot"><div class="pm-h-chart-grid">${ticks.map(t=>`<div class="pm-h-gridline"><span>${unit==='%'?Math.round(ceiling*(1-t))+'%':fmt(ceiling*(1-t))}</span></div>`).join('')}</div><div class="pm-h-bar-zone">${items.map(([label,value,color])=>`<div class="pm-h-bar-item"><strong>${unit==='%'?fmtPct(value):fmt(value)}</strong><div class="pm-h-bar-track"><div style="height:${Math.max(1,100*value/ceiling)}%;background:${color}"></div></div><span>${label}</span></div>`).join('')}</div></div>${items.length===1?'<div class="pm-h-only">Sin turno B para comparar</div>':''}`;
+}
+function render(){const data=makeData(selected),all=aggregate(data),a=data.filter(r=>r.shift==='A'),b=data.filter(r=>r.shift==='B'),agA=aggregate(a),agB=aggregate(b);
+el('pm-h-date-text').textContent=selected.toLocaleDateString('es-CL',{day:'numeric',month:'long',year:'numeric'});el('pm-h-date-input').value=iso(selected);el('pm-h-date-next').disabled=selected>=today;
+el('pm-h-plan').textContent=fmt(all.planned);el('pm-h-vaciado').textContent=fmt(all.kg);el('pm-h-export').textContent=all.exp===null?'—':fmtPct(all.exp);el('pm-h-avg').textContent=all.rate===null?'—':fmt(all.rate);el('pm-h-progress').style.width=(all.planned?Math.min(100,all.kg/all.planned*100):0)+'%';
+barChart('pm-h-chart-rate',agA.rate,agB.rate,'kg/h');barChart('pm-h-chart-export',agA.exp,agB.exp,'%',100);
+el('pm-h-shifts').innerHTML=`<div class="pm-h-shift-block"><div class="pm-h-shift-line"><span>Turno A</span><b>${a.length?fmt(agA.kg)+' kg':'Sin registros'}</b></div><div class="pm-h-shift-track"><div class="pm-h-shift-fill a" style="width:${agA.kg?100*agA.kg/Math.max(agA.kg,agB.kg):0}%"></div></div></div>${b.length?`<div class="pm-h-shift-block"><div class="pm-h-shift-line"><span>Turno B</span><b>${fmt(agB.kg)} kg</b></div><div class="pm-h-shift-track"><div class="pm-h-shift-fill b" style="width:${100*agB.kg/Math.max(agA.kg,agB.kg)}%"></div></div></div>`:''}`;el('pm-h-side-total').textContent=data.length;el('pm-h-side-a').textContent=a.length;el('pm-h-side-b').textContent=b.length;el('pm-h-process-a').style.width=(data.length?100*a.length/data.length:0)+'%';el('pm-h-process-b').style.width=(data.length?100*b.length/data.length:0)+'%';
+const q=el('pm-h-search').value.trim().toLocaleLowerCase('es'),shift=el('pm-h-shift').value;const filtered=data.filter(r=>(shift==='all'||r.shift===shift)&&[r.id,r.producer,r.variety].some(v=>v.toLocaleLowerCase('es').includes(q)));
+const pages=Math.max(1,Math.ceil(filtered.length/PAGE_SIZE));page=Math.min(page,pages);const shown=filtered.slice((page-1)*PAGE_SIZE,page*PAGE_SIZE);
+el('pm-h-rows').innerHTML=shown.length?shown.map(r=>`<tr><td><b>${r.id}</b></td><td><span class="pm-h-pill ${r.shift==='B'?'blue':''}">${r.shift}</span></td><td>${r.producer}</td><td>${r.variety}</td><td>${r.start}</td><td>${r.end}</td><td>${fmt(r.planned)}</td><td><b>${fmt(r.kg)}</b></td><td class="pm-h-green"><b>${fmtPct(r.exp)}</b></td><td>${fmt(r.kg/(duration(r)/60))}</td><td><span class="pm-h-status">${r.status}</span></td></tr>`).join(''):`<tr><td colspan="11" class="pm-h-no-results">${data.length?'No hay procesos que coincidan con los filtros.':'Sin procesos registrados para esta jornada.'}</td></tr>`;
+el('pm-h-count').textContent=`${data.length} procesos`;el('pm-h-page-label').textContent=filtered.length?`Mostrando ${(page-1)*PAGE_SIZE+1}–${Math.min(page*PAGE_SIZE,filtered.length)} de ${filtered.length}`:'Sin registros';el('pm-h-page-number').textContent=`${page} / ${pages}`;el('pm-h-prev').disabled=page===1;el('pm-h-next').disabled=page===pages;
+}
+el('pm-h-date-prev').onclick=()=>{selected.setDate(selected.getDate()-1);page=1;render()};el('pm-h-date-next').onclick=()=>{if(selected>=today)return;selected.setDate(selected.getDate()+1);page=1;render()};el('pm-h-date-input').max=iso(today);el('pm-h-date-input').onchange=e=>{if(!e.target.value)return;const [y,m,d]=e.target.value.split('-').map(Number);selected=new Date(y,m-1,d,12);if(selected>today)selected=new Date(today);page=1;render()};el('pm-h-search').oninput=()=>{page=1;render()};el('pm-h-shift').onchange=()=>{page=1;render()};el('pm-h-prev').onclick=()=>{page--;render()};el('pm-h-next').onclick=()=>{page++;render()};render();
+})();

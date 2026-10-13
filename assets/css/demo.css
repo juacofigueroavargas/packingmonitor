@@ -1,0 +1,6 @@
+
+/* Modo presentación: solo se activa con ?demo=1 */
+.pm-demo-indicator{display:flex;align-items:center;gap:7px;margin-left:8px;padding:6px 10px;border:1px solid #ccece1;border-radius:10px;background:#f0fbf7;color:#087c5d;font-size:11px;font-weight:700;white-space:nowrap}
+.pm-demo-dot{width:7px;height:7px;border-radius:50%;background:#0ca678;box-shadow:0 0 0 3px #d9f5e9}
+.pm-demo-pause{border:0;background:transparent;color:#087c5d;font-size:11px;cursor:pointer;padding:2px 4px;border-left:1px solid #ccece1;margin-left:2px}
+@media(max-width:1000px){.pm-demo-indicator{padding:5px;gap:4px;font-size:10px}}

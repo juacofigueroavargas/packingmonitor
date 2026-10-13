@@ -1,0 +1,81 @@
+{
+  "source": "demo",
+  "refresh_seconds": 30,
+  "data": {
+    "process": {
+      "number": 2458,
+      "plant": "00GS",
+      "line": "1",
+      "line_name": "UNITEC 1",
+      "species": "Cerezas",
+      "variety": "Santina",
+      "producer_code": "0748"
+    },
+    "kpis": {
+      "kilos_vaciados": 48620,
+      "kilos_planificados": 65000,
+      "vaciado_en_linea_pct": 74.8,
+      "kilos_hora": 6240,
+      "promedio_hora": 5980,
+      "kilos_por_via": 1560,
+      "envases_hora": 780,
+      "kilos_pendientes": 16380,
+      "proyeccion_minutos": 158
+    },
+    "hourly": [
+      {
+        "hour": "08:00",
+        "kilos": 4320,
+        "envases": 640
+      },
+      {
+        "hour": "09:00",
+        "kilos": 5100,
+        "envases": 710
+      },
+      {
+        "hour": "10:00",
+        "kilos": 5850,
+        "envases": 750
+      },
+      {
+        "hour": "11:00",
+        "kilos": 6420,
+        "envases": 810
+      },
+      {
+        "hour": "12:00",
+        "kilos": 5600,
+        "envases": 730
+      },
+      {
+        "hour": "13:00",
+        "kilos": 5980,
+        "envases": 760
+      },
+      {
+        "hour": "14:00",
+        "kilos": 6240,
+        "envases": 780
+      }
+    ],
+    "distribution": [
+      {
+        "name": "Exportación",
+        "pct": 82.4
+      },
+      {
+        "name": "Mercado interno",
+        "pct": 10.2
+      },
+      {
+        "name": "Precalibre",
+        "pct": 4.6
+      },
+      {
+        "name": "Desecho / merma",
+        "pct": 2.8
+      }
+    ]
+  }
+}
